@@ -1,11 +1,11 @@
 'use strict';
 
-var assign = require('lodash/object/assign'),
-  fs = require('fs'),
-  gutil = require('gulp-util'),
-  lang = require('lodash/lang'),
-  path = require('path'),
-  util = require('util');
+var assign = require('lodash/object/assign');
+var fs = require('fs');
+var gutil = require('gulp-util');
+var lang = require('lodash/lang');
+var path = require('path');
+var util = require('util');
 
 var _task;
 var runSequence;
@@ -16,8 +16,7 @@ module.exports = {
 };
 
 function load(taskDir, gulp) {
-  runSequence = require('run-sequence')
-    .use(gulp);
+  runSequence = require('run-sequence').use(gulp);
   if (arguments.length < 2) {
     throw 'Expecting at least two arguments: taskDir and gulp';
   }
@@ -48,6 +47,7 @@ function load(taskDir, gulp) {
   }
 
   var taskInfo = require('../task-info')(gulp);
+
   assign(module.exports.context, {
     taskNames: taskNames,
     defaultTaskNames: state.defaultTaskNames,
@@ -75,6 +75,7 @@ function addHelpTask(gulp, taskInfo, options) {
     options.priority : 0;
   if (lang.isUndefined(options.isDefault) || options.isDefault === true) {
     var defaultTask = gulp.tasks.default;
+
     if (defaultTask) {
       defaultTask.dep.push('help');
     } else {
@@ -84,42 +85,41 @@ function addHelpTask(gulp, taskInfo, options) {
 }
 
 function _parse(state, taskDir, gulp) {
-  taskDir = path.resolve(taskDir);
-
-  var customOptions = ['usage',
+  var customOptions = [
+    'usage',
     'description',
     'seq',
     'options',
     'isDefault'
   ];
-
-  var args = Array.prototype.slice.call(arguments)
-    .splice(2);
-
+  var args = Array.prototype.slice.call(arguments).splice(2);
   var currentPriority = -10;
+
+  taskDir = path.resolve(taskDir);
 
   // get all tasks
   // todo: clean up this mess
   fs.readdirSync(taskDir)
     .map(function (file) {
-      var fullPath = taskDir + path.sep + file;
+      var fullPath = path.resolve(taskDir, file);
       var stats = fs.statSync(fullPath);
+
       if (stats.isFile() && path.extname(file) === '.js') {
         var tasks;
-        var moduleId = path.join(taskDir, file);
-        var requiredTasks = require(moduleId);
+        var requiredTasks = require(fullPath);
+
         module.children.forEach(function (childModule) {
-          if (moduleId === childModule.id) {
+          if (fullPath === childModule.id) {
             childModule.tasksContext = module.exports.context;
           }
         });
 
         if (lang.isFunction(requiredTasks)) {
-          tasks =
-            requiredTasks.apply(null, args);
+          tasks = requiredTasks.apply(null, args);
           if (lang.isFunction(tasks)) {
             var taskFn = tasks;
             var taskName = path.basename(file, '.js');
+
             tasks = {};
             tasks[taskName] = {
               fn: taskFn
@@ -130,11 +130,10 @@ function _parse(state, taskDir, gulp) {
         }
         // let's assume it's an object
         if (lang.isObject(tasks)) {
-          Object.keys(tasks)
-            .map(function (taskName2) {
+          Object.keys(tasks) .map(function (taskName2) {
               var task = tasks[taskName2];
-
               var taskArgs = [taskName2];
+
               if (lang.isFunction(task)) {
                 taskArgs.push([]);
                 taskArgs.push(task);
@@ -150,19 +149,23 @@ function _parse(state, taskDir, gulp) {
                 var deps = [];
                 var depIndex = 1;
                 var anonCount = 0;
+
                 if (lang.isArray(task.dep)) {
                   task.dep.map(function (taskDep) {
                     var dep = taskDep;
+
                     if (lang.isFunction(taskDep)) {
                       var fnName = _getFunctionName(taskDep);
+
                       if (!fnName) {
                         anonCount++;
                         fnName = util.format('anonymous-%s',
                           anonCount);
                       }
                       var depName = util.format(
-                        '%s-(index: %s, fnName: %s)', taskName2,
-                        depIndex, fnName);
+                        '%s-(index: %s, fnName: %s)',
+                        taskName2, depIndex, fnName);
+
                       _task.apply(gulp, [
                         depName, [],
                         taskDep
@@ -187,8 +190,8 @@ function _parse(state, taskDir, gulp) {
 
                 // priority
                 if (task.description) {
-
                   var priority = task.priority;
+
                   if (!priority) {
                     priority = currentPriority;
                     currentPriority = currentPriority - 10;
@@ -197,17 +200,12 @@ function _parse(state, taskDir, gulp) {
                 }
                 gulp.tasks[taskName2].file = path.basename(file);
                 gulp.tasks[taskName2].path = path.resolve(taskDir);
-                customOptions.map(function (
-                  customOption) {
-                  var taskOption = task[
-                    customOption];
+
+                customOptions.map(function (customOption) {
+                  var taskOption = task[customOption];
 
                   if (taskOption) {
-
-                    gulp.tasks[taskName2]
-                      [
-                        customOption
-                      ] = taskOption;
+                    gulp.tasks[taskName2][customOption] = taskOption;
                   }
                 });
               }
@@ -233,16 +231,12 @@ function _sequences(gulp, taskName, task, state) {
       anonCount: 0
     };
 
-
     task.seq = _parseSequence(gulp, taskName, task.seq, state, localState);
 
     // If task does not have a function assigned then create one...
     if (!task.fn) {
       task.fn = function (done) {
-        runSequence.apply(
-          null, task.seq
-          .concat(
-            done));
+        runSequence.apply(null, task.seq.concat(done));
       };
 
     } else {
@@ -258,34 +252,34 @@ function _sequences(gulp, taskName, task, state) {
 
       task.fn = function (done) {
         runSequence.apply(
-          null, task.seq
-          .concat(
-            subName
-          )
-          .concat(
-            done));
+          null, task.seq.concat(subName).concat(done)
+        );
       };
+
     }
   }
 }
 
 function _parseSequence(gulp, taskName, seqTasks, state, localState) {
-
   return seqTasks.map(function (seqTask) {
     if (lang.isString(seqTask)) {
       return seqTask;
     } else if (lang.isFunction(seqTask)) {
       var fnName = _getFunctionName(seqTask);
+
       if (!fnName) {
         localState.anonCount++;
         fnName = util.format('anonymous-%s',
-          localState.anonCount);
+          localState.anonCount
+        );
       }
 
       var seqName = util.format(
         '%s-(index: %s, fnName: %s)',
         taskName,
-        localState.seqIndex, fnName);
+        localState.seqIndex, fnName
+      );
+
       _task.apply(gulp, [
         seqName, [],
         seqTask
@@ -299,7 +293,6 @@ function _parseSequence(gulp, taskName, seqTasks, state, localState) {
     }
   });
 }
-
 
 function _getFunctionName(fn) {
   var fnName = fn.toString();

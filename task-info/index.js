@@ -1,19 +1,18 @@
 'use strict';
 
-var assign = require('lodash/object/assign'),
-  flatten = require('lodash/array/flatten'),
-  gutil = require('gulp-util'),
-  lang = require('lodash/lang'),
-  padRight = require('lodash/string/padRight'),
-  sortBy = require('lodash/collection/sortBy'),
-  util = require('util');
+var assign = require('lodash/object/assign');
+var flatten = require('lodash/array/flatten');
+var gutil = require('gulp-util');
+var lang = require('lodash/lang');
+var padRight = require('lodash/string/padRight');
+var sortBy = require('lodash/collection/sortBy');
+var util = require('util');
 
 var _widths;
 var _parsedTasks;
 var _tasks;
 
 module.exports = function (gulp) {
-
   var help = {
     cliHelp: cliHelp,
     taskTree: taskTree
@@ -28,11 +27,9 @@ module.exports = function (gulp) {
     };
     _parsedTasks = {};
 
-    var tasks = sortBy(Object.keys(
-        gulpTasks)
-      .map(function (taskName) {
-        var task = _parseTask(gulpTasks[
-          taskName]);
+    var tasks = sortBy(Object.keys(gulpTasks).map(function (taskName) {
+        var task = _parseTask(gulpTasks[taskName]);
+
         _parsedTasks[taskName] = task;
         return task;
       }),
@@ -41,11 +38,9 @@ module.exports = function (gulp) {
       });
 
     tasks.forEach(function (task) {
-      task.inheritedOptionalOptions =
-        _traverseOptionalOptions(task);
+      task.inheritedOptionalOptions =  _traverseOptionalOptions(task);
       task.fullOptionalOptions = assign({}, task.inheritedOptionalOptions,
-        task
-        .options
+        task.options
       );
 
     });
@@ -59,8 +54,6 @@ module.exports = function (gulp) {
 
   function cliHelp(env) {
     var tasks = _tasks ? _tasks : parseTasks(gulp.tasks);
-
-
     var list = [];
     var baseColor = gutil.colors.cyan;
     var subColor = gutil.colors.yellow;
@@ -124,8 +117,7 @@ function _parseTask(task) {
 
     if (lang.isObject(value)) {
       if (lang.isString(value.description)) {
-        _widths.main = _widths.main <
-          value.name.length ?
+        _widths.main = _widths.main < value.name.length ?
           value.name.length :
           _widths.main;
       }
@@ -134,19 +126,15 @@ function _parseTask(task) {
           .concat(Object.keys(value.options)
             .filter(function (option) {
 
-              _widths.sub = _widths.sub <
-                option.length ?
+              _widths.sub = _widths.sub < option.length ?
                 option.length :
                 _widths.sub;
 
-              return option !==
-                '';
+              return option !== '';
             })
             .map(function (option) {
               var helpOption = {};
-              helpOption[option] =
-                value.options[
-                  option];
+              helpOption[option] = value.options[option];
               return helpOption;
             })));
       }
@@ -160,8 +148,8 @@ function _traverseOptionalOptions(task) {
   var optionalOptions = {};
 
   if (task.description) {
-
     var allDeps = [];
+
     if (task.dep && task.dep.length) {
       allDeps.push(task.dep);
     }
