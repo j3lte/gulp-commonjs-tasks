@@ -4,8 +4,6 @@ var assign = require('lodash/object/assign');
 var flatten = require('lodash/array/flatten');
 var gutil = require('gulp-util');
 var lang = require('lodash/lang');
-var padRight = require('lodash/string/padRight');
-var sortBy = require('lodash/collection/sortBy');
 var util = require('util');
 
 var _widths;
@@ -27,14 +25,13 @@ module.exports = function (gulp) {
     };
     _parsedTasks = {};
 
-    var tasks = sortBy(Object.keys(gulpTasks).map(function (taskName) {
+    var tasks = Object.keys(gulpTasks).map(function (taskName) {
         var task = _parseTask(gulpTasks[taskName]);
 
         _parsedTasks[taskName] = task;
         return task;
-      }),
-      function (task) {
-        return task.priority ? -task.priority : 0;
+      }).sort(function (a, b) {
+        return (a.priority ? -a.priority : 0) - (b.priority ? -b.priority : 0);
       });
 
     tasks.forEach(function (task) {
@@ -73,7 +70,7 @@ module.exports = function (gulp) {
           _widths.main +
           2)), task.description));
 
-        if (lang.isObject(task.fullOptionalOptions)) {
+        if (_isObject(task.fullOptionalOptions)) {
           Object.keys(task.fullOptionalOptions)
             .forEach(function (option) {
               list.push(util.format('    %s : %s ', subColor(
@@ -96,7 +93,7 @@ module.exports = function (gulp) {
             _widths.main +
             2))));
 
-          if (lang.isObject(task.fullOptionalOptions)) {
+          if (_isObject(task.fullOptionalOptions)) {
             Object.keys(task.fullOptionalOptions)
               .forEach(function (option) {
                 list.push(util.format('    %s : %s ', subColor(
@@ -115,8 +112,8 @@ module.exports = function (gulp) {
 function _parseTask(task) {
   return lang.cloneDeep(task, function (value) {
 
-    if (lang.isObject(value)) {
-      if (lang.isString(value.description)) {
+    if (_.isObject(value)) {
+      if (typeof value.description === 'string') {
         _widths.main = _widths.main < value.name.length ?
           value.name.length :
           _widths.main;
@@ -176,4 +173,16 @@ function _traverseOptionalOptions(task) {
   }
 
   return optionalOptions;
+}
+
+function padRight(str, len) {
+  if (str.length > len) {
+    return str;
+  }
+  return str + Array(len - str.length + 1).join(' ');
+}
+
+function _isObject(value) {
+  var type = typeof value;
+  return !!value && (type === 'object' || type === 'function');
 }

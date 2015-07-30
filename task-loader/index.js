@@ -1,6 +1,5 @@
 'use strict';
 
-var assign = require('lodash/object/assign');
 var fs = require('fs');
 var gutil = require('gulp-util');
 var lang = require('lodash/lang');
@@ -48,7 +47,7 @@ function load(taskDir, gulp) {
 
   var taskInfo = require('../task-info')(gulp);
 
-  assign(module.exports.context, {
+  extend(module.exports.context, {
     taskNames: taskNames,
     defaultTaskNames: state.defaultTaskNames,
     addHelpTask: addHelpTask.bind(this, gulp, taskInfo),
@@ -71,9 +70,9 @@ function addHelpTask(gulp, taskInfo, options) {
     '-a, --all': 'Also show tasks without descriptions'
   };
 
-  gulp.tasks.help.priority = !lang.isUndefined(options.priority) ?
+  gulp.tasks.help.priority = typeof options.priority !== 'undefined' ?
     options.priority : 0;
-  if (lang.isUndefined(options.isDefault) || options.isDefault === true) {
+  if (typeof options.isDefault === 'undefined' || options.isDefault === true) {
     var defaultTask = gulp.tasks.default;
 
     if (defaultTask) {
@@ -114,9 +113,9 @@ function _parse(state, taskDir, gulp) {
           }
         });
 
-        if (lang.isFunction(requiredTasks)) {
+        if (typeof requiredTasks === 'function') {
           tasks = requiredTasks.apply(null, args);
-          if (lang.isFunction(tasks)) {
+          if (typeof tasks === 'function') {
             var taskFn = tasks;
             var taskName = path.basename(file, '.js');
 
@@ -129,15 +128,15 @@ function _parse(state, taskDir, gulp) {
           tasks = requiredTasks;
         }
         // let's assume it's an object
-        if (lang.isObject(tasks)) {
+        if (_isObject(tasks)) {
           Object.keys(tasks) .map(function (taskName2) {
               var task = tasks[taskName2];
               var taskArgs = [taskName2];
 
-              if (lang.isFunction(task)) {
+              if (typeof task === 'function') {
                 taskArgs.push([]);
                 taskArgs.push(task);
-              } else if (lang.isObject(task)) {
+              } else if (_isObject(task)) {
 
                 // Check for default tasks
                 _defaultTasks(gulp, taskName2, task, state);
@@ -150,11 +149,12 @@ function _parse(state, taskDir, gulp) {
                 var depIndex = 1;
                 var anonCount = 0;
 
+                console.log(typeof task.dep, task.dep);
                 if (lang.isArray(task.dep)) {
                   task.dep.map(function (taskDep) {
                     var dep = taskDep;
 
-                    if (lang.isFunction(taskDep)) {
+                    if (typeof taskDep === 'function') {
                       var fnName = _getFunctionName(taskDep);
 
                       if (!fnName) {
@@ -262,9 +262,10 @@ function _sequences(gulp, taskName, task, state) {
 
 function _parseSequence(gulp, taskName, seqTasks, state, localState) {
   return seqTasks.map(function (seqTask) {
-    if (lang.isString(seqTask)) {
+    console.log(typeof seqTask);
+    if (typeof seqTask === 'string') {
       return seqTask;
-    } else if (lang.isFunction(seqTask)) {
+    } else if (typeof seqTask === 'function') {
       var fnName = _getFunctionName(seqTask);
 
       if (!fnName) {
@@ -299,4 +300,16 @@ function _getFunctionName(fn) {
   fnName = fnName.substr('function '.length);
   fnName = fnName.substr(0, fnName.indexOf('('));
   return fnName;
+}
+
+function extend(to, from) {
+  for (var key in from) {
+    to[key] = from[key];
+  }
+  return to;
+}
+
+function _isObject(value) {
+  var type = typeof value;
+  return !!value && (type === 'object' || type === 'function');
 }
