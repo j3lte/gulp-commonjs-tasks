@@ -5,6 +5,7 @@ var flatten = require('lodash/array/flatten');
 var gutil = require('gulp-util');
 var lang = require('lodash/lang');
 var util = require('util');
+var helpers = require('../lib/helpers');
 
 var _widths;
 var _parsedTasks;
@@ -66,15 +67,15 @@ module.exports = function (gulp) {
         return task.description;
       })
       .forEach(function (task) {
-        list.push(util.format('  %s : %s', baseColor(padRight(task.name,
+        list.push(util.format('  %s : %s', baseColor(helpers.padRight(task.name,
           _widths.main +
           2)), task.description));
 
-        if (_isObject(task.fullOptionalOptions)) {
+        if (helpers.isObject(task.fullOptionalOptions)) {
           Object.keys(task.fullOptionalOptions)
             .forEach(function (option) {
               list.push(util.format('    %s : %s ', subColor(
-                padRight(option,
+                helpers.padRight(option,
                   _widths.sub +
                   2)), task.fullOptionalOptions[
                 option]));
@@ -89,15 +90,15 @@ module.exports = function (gulp) {
           return !task.description;
         })
         .forEach(function (task) {
-          list.push(util.format('  %s', baseColor(padRight(task.name,
+          list.push(util.format('  %s', baseColor(helpers.padRight(task.name,
             _widths.main +
             2))));
 
-          if (_isObject(task.fullOptionalOptions)) {
+          if (helpers.isObject(task.fullOptionalOptions)) {
             Object.keys(task.fullOptionalOptions)
               .forEach(function (option) {
                 list.push(util.format('    %s : %s ', subColor(
-                  padRight(option,
+                  helpers.padRight(option,
                     _widths.sub +
                     2)), task.fullOptionalOptions[
                   option]));
@@ -112,13 +113,13 @@ module.exports = function (gulp) {
 function _parseTask(task) {
   return lang.cloneDeep(task, function (value) {
 
-    if (_.isObject(value)) {
+    if (helpers.isObject(value)) {
       if (typeof value.description === 'string') {
         _widths.main = _widths.main < value.name.length ?
           value.name.length :
           _widths.main;
       }
-      if (lang.isObject(value.options)) {
+      if (helpers.isObject(value.options)) {
         value.optionalOptions = assign.apply(null, [{}]
           .concat(Object.keys(value.options)
             .filter(function (option) {
@@ -173,16 +174,4 @@ function _traverseOptionalOptions(task) {
   }
 
   return optionalOptions;
-}
-
-function padRight(str, len) {
-  if (str.length > len) {
-    return str;
-  }
-  return str + Array(len - str.length + 1).join(' ');
-}
-
-function _isObject(value) {
-  var type = typeof value;
-  return !!value && (type === 'object' || type === 'function');
 }

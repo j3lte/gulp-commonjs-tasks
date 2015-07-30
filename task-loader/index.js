@@ -2,9 +2,9 @@
 
 var fs = require('fs');
 var gutil = require('gulp-util');
-var lang = require('lodash/lang');
 var path = require('path');
 var util = require('util');
+var helpers = require('../lib/helpers');
 
 var _task;
 var runSequence;
@@ -47,7 +47,7 @@ function load(taskDir, gulp) {
 
   var taskInfo = require('../task-info')(gulp);
 
-  extend(module.exports.context, {
+  helpers.extend(module.exports.context, {
     taskNames: taskNames,
     defaultTaskNames: state.defaultTaskNames,
     addHelpTask: addHelpTask.bind(this, gulp, taskInfo),
@@ -128,7 +128,7 @@ function _parse(state, taskDir, gulp) {
           tasks = requiredTasks;
         }
         // let's assume it's an object
-        if (_isObject(tasks)) {
+        if (helpers.isObject(tasks)) {
           Object.keys(tasks) .map(function (taskName2) {
               var task = tasks[taskName2];
               var taskArgs = [taskName2];
@@ -136,7 +136,7 @@ function _parse(state, taskDir, gulp) {
               if (typeof task === 'function') {
                 taskArgs.push([]);
                 taskArgs.push(task);
-              } else if (_isObject(task)) {
+              } else if (helpers.isObject(task)) {
 
                 // Check for default tasks
                 _defaultTasks(gulp, taskName2, task, state);
@@ -149,8 +149,7 @@ function _parse(state, taskDir, gulp) {
                 var depIndex = 1;
                 var anonCount = 0;
 
-                console.log(typeof task.dep, task.dep);
-                if (lang.isArray(task.dep)) {
+                if (helpers.isArray(task.dep)) {
                   task.dep.map(function (taskDep) {
                     var dep = taskDep;
 
@@ -180,7 +179,7 @@ function _parse(state, taskDir, gulp) {
                 if (task.fn) {
                   taskArgs.push(task.fn);
                 }
-              } else if (lang.isArray(task)) {
+              } else if (helpers.isArray(task)) {
                 taskArgs.push(task);
               }
 
@@ -288,7 +287,7 @@ function _parseSequence(gulp, taskName, seqTasks, state, localState) {
 
       localState.seqIndex++;
       return seqName;
-    } else if (lang.isArray(seqTask)) {
+    } else if (helpers.isArray(seqTask)) {
       state.sequenceCount++;
       return _parseSequence(gulp, taskName, seqTask, state, localState);
     }
@@ -300,16 +299,4 @@ function _getFunctionName(fn) {
   fnName = fnName.substr('function '.length);
   fnName = fnName.substr(0, fnName.indexOf('('));
   return fnName;
-}
-
-function extend(to, from) {
-  for (var key in from) {
-    to[key] = from[key];
-  }
-  return to;
-}
-
-function _isObject(value) {
-  var type = typeof value;
-  return !!value && (type === 'object' || type === 'function');
 }
