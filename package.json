@@ -9,7 +9,9 @@
     "task-loader"
   ],
   "scripts": {
-    "test": "mocha ./test/**/*.spec.js"
+    "test": "mocha ./test/**/*.spec.js",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -36,10 +38,12 @@
     "sinon": "^1.14.1"
   },
   "dependencies": {
-    "gulp": "^3.8.11",
+    "gulp": "^4.0.0",
     "gulp-util": "^3.0.4",
     "js-object-pretty-print": "^0.1.4",
-    "lodash": "^3.6.0",
-    "run-sequence": "^1.0.2"
-  }
+    "lodash": "^4.17.11",
+    "run-sequence": "^1.0.2",
+    "snyk": "^1.151.0"
+  },
+  "snyk": true
 }
